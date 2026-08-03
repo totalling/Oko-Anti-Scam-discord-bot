@@ -1,0 +1,7 @@
+{
+  "name": "bouncer.js",
+  "version": "0.1.0",
+  "description": "Vendored copy of bouncer.js (dist build) — resilient fetch client used for CDN attachment downloads",
+  "type": "module",
+  "main": "index.js"
+}

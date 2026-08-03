@@ -1,0 +1,18 @@
+{
+  "name": "oko-js",
+  "version": "1.0.0",
+  "description": "Automatic crypto giveaway / phishing scam detection for Discord (JavaScript port)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "node src/deploy-commands.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.19.0",
+    "dotenv": "^16.4.5",
+    "sharp": "^0.33.5"
+  }
+}

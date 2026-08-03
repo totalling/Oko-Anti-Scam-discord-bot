@@ -1,0 +1,9 @@
+.env
+
+node_modules/
+
+data/guild_settings.json
+data/pending_reviews.json
+data/scam_hashes.json
+data/global_blacklist.json
+data/.command-hash
