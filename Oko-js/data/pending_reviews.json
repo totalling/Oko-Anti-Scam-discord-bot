@@ -1,0 +1,99 @@
+{
+  "1533933562917687418": {
+    "guild_id": "1156641780360556646",
+    "author_id": "1173400043466784849",
+    "confidence": 1,
+    "reasons": [
+      "matches known scam image (distance=6, source=auto:heuristic)",
+      "promo code",
+      "withdraw bonus",
+      "scarcity: post will be deleted",
+      "scarcity: only the fastest",
+      "crypto casino",
+      "cash bonus to everyone",
+      "impersonation bio phrase",
+      "known scam domain: fomawin.com",
+      "impersonates watched name: mrbeast"
+    ],
+    "content": "",
+    "image_hashes": [
+      "c1e0e187981f0efe"
+    ],
+    "resolved": true,
+    "verdict": "kicked"
+  },
+  "1533934223264845896": {
+    "guild_id": "1156641780360556646",
+    "author_id": "1173400043466784849",
+    "confidence": 1,
+    "reasons": [
+      "matches known scam image (distance=6, source=auto:heuristic)",
+      "promo code",
+      "withdraw bonus",
+      "scarcity: post will be deleted",
+      "scarcity: only the fastest",
+      "crypto casino",
+      "cash bonus to everyone",
+      "impersonation bio phrase",
+      "known scam domain: fomawin.com",
+      "impersonates watched name: mrbeast"
+    ],
+    "content": "",
+    "image_hashes": [
+      "c1e0e187981f0efe"
+    ],
+    "resolved": true,
+    "verdict": "kicked"
+  },
+  "1533934747477213454": {
+    "guild_id": "1156641780360556646",
+    "author_id": "1173400043466784849",
+    "confidence": 1,
+    "reasons": [
+      "matches known scam image (distance=6, source=auto:heuristic)",
+      "promo code",
+      "withdraw bonus",
+      "scarcity: post will be deleted",
+      "scarcity: only the fastest",
+      "crypto casino",
+      "cash bonus to everyone",
+      "impersonation bio phrase",
+      "known scam domain: fomawin.com",
+      "impersonates watched name: mrbeast"
+    ],
+    "content": "",
+    "image_hashes": [
+      "c1e0e187981f0efe"
+    ],
+    "resolved": true,
+    "verdict": "kicked"
+  },
+  "1533938156087414874": {
+    "guild_id": "1156641780360556646",
+    "author_id": "1173400043466784849",
+    "confidence": 1,
+    "reasons": [
+      "matches known scam image (distance=0, source=auto:heuristic)"
+    ],
+    "content": "",
+    "image_hashes": [
+      "e1a0f1c7981e0afe"
+    ],
+    "resolved": true,
+    "verdict": "released"
+  },
+  "1533938383708229694": {
+    "guild_id": "1156641780360556646",
+    "author_id": "1173400043466784849",
+    "confidence": 1,
+    "reasons": [
+      "matches known scam image (distance=0, source=auto:heuristic)"
+    ],
+    "content": "",
+    "image_hashes": [
+      "e1a0f1c7981e0afe"
+    ],
+    "resolved": true,
+    "verdict": "released"
+  }
+}
