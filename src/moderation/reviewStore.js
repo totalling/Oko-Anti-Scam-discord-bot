@@ -42,4 +42,14 @@ function setResolved(logMessageId, verdict) {
     }
   });
 }
-module.exports = { saveReview, getReview, setResolved };
+function getPendingForGuild(guildId, limit = 25) {
+  const data = store.read();
+  const entries = [];
+  for (const [messageId, entry] of Object.entries(data)) {
+    if (!entry.resolved && String(entry.guild_id) === String(guildId)) {
+      entries.push({ messageId, authorId: entry.author_id, confidence: entry.confidence, reasons: entry.reasons ?? [] });
+    }
+  }
+  return entries.slice(0, limit);
+}
+module.exports = { saveReview, getReview, setResolved, getPendingForGuild };

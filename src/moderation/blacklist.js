@@ -18,4 +18,21 @@ function add(userId, { reason, sourceGuildId, confidence }) {
     write(data);
   });
 }
-module.exports = { getEntry, add };
+function remove(userId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const key = String(userId);
+    if (!(key in data)) return false;
+    delete data[key];
+    write(data);
+    return true;
+  });
+}
+function getRecent(limit = 10) {
+  const data = store.read();
+  return Object.entries(data)
+    .map(([userId, entry]) => ({ userId, ...entry }))
+    .sort((a, b) => new Date(b.added_at).getTime() - new Date(a.added_at).getTime())
+    .slice(0, limit);
+}
+module.exports = { getEntry, add, remove, getRecent };

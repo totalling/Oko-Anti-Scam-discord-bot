@@ -77,6 +77,102 @@ function getReviewMode(guildId) {
 function setReviewMode(guildId, enabled) {
   return _set(guildId, 'review_mode', enabled);
 }
+function getThreshold(guildId) {
+  return _entry(store.read(), guildId).threshold ?? null;
+}
+function setThreshold(guildId, threshold) {
+  if (threshold !== null && (!Number.isFinite(threshold) || threshold < 0 || threshold > 1)) {
+    throw new Error(`Invalid threshold: ${threshold}`);
+  }
+  return _set(guildId, 'threshold', threshold);
+}
+function getExemptUserIds(guildId) {
+  return _entry(store.read(), guildId).exempt_user_ids ?? [];
+}
+function addExemptUserId(guildId, userId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const entry = (data[String(guildId)] ??= {});
+    const list = (entry.exempt_user_ids ??= []);
+    userId = String(userId);
+    if (list.includes(userId)) return false;
+    list.push(userId);
+    entry.updated_at = new Date().toISOString();
+    write(data);
+    return true;
+  });
+}
+function removeExemptUserId(guildId, userId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const entry = data[String(guildId)];
+    const list = entry?.exempt_user_ids ?? [];
+    userId = String(userId);
+    if (!list.includes(userId)) return false;
+    entry.exempt_user_ids = list.filter((id) => id !== userId);
+    entry.updated_at = new Date().toISOString();
+    write(data);
+    return true;
+  });
+}
+function getExemptRoleIds(guildId) {
+  return _entry(store.read(), guildId).exempt_role_ids ?? [];
+}
+function addExemptRoleId(guildId, roleId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const entry = (data[String(guildId)] ??= {});
+    const list = (entry.exempt_role_ids ??= []);
+    roleId = String(roleId);
+    if (list.includes(roleId)) return false;
+    list.push(roleId);
+    entry.updated_at = new Date().toISOString();
+    write(data);
+    return true;
+  });
+}
+function removeExemptRoleId(guildId, roleId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const entry = data[String(guildId)];
+    const list = entry?.exempt_role_ids ?? [];
+    roleId = String(roleId);
+    if (!list.includes(roleId)) return false;
+    entry.exempt_role_ids = list.filter((id) => id !== roleId);
+    entry.updated_at = new Date().toISOString();
+    write(data);
+    return true;
+  });
+}
+function getIgnoredChannelIds(guildId) {
+  return _entry(store.read(), guildId).ignored_channel_ids ?? [];
+}
+function addIgnoredChannelId(guildId, channelId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const entry = (data[String(guildId)] ??= {});
+    const list = (entry.ignored_channel_ids ??= []);
+    channelId = String(channelId);
+    if (list.includes(channelId)) return false;
+    list.push(channelId);
+    entry.updated_at = new Date().toISOString();
+    write(data);
+    return true;
+  });
+}
+function removeIgnoredChannelId(guildId, channelId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const entry = data[String(guildId)];
+    const list = entry?.ignored_channel_ids ?? [];
+    channelId = String(channelId);
+    if (!list.includes(channelId)) return false;
+    entry.ignored_channel_ids = list.filter((id) => id !== channelId);
+    entry.updated_at = new Date().toISOString();
+    write(data);
+    return true;
+  });
+}
 module.exports = {
   VALID_PUNISHMENTS,
   isEnabled,
@@ -95,4 +191,15 @@ module.exports = {
   setGlobalBlacklistEnabled,
   getReviewMode,
   setReviewMode,
+  getThreshold,
+  setThreshold,
+  getExemptUserIds,
+  addExemptUserId,
+  removeExemptUserId,
+  getExemptRoleIds,
+  addExemptRoleId,
+  removeExemptRoleId,
+  getIgnoredChannelIds,
+  addIgnoredChannelId,
+  removeIgnoredChannelId,
 };
