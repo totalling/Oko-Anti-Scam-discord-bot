@@ -14,6 +14,18 @@ module.exports = {
     'https://discord.com/oauth2/authorize' +
     '?client_id=1523055385190207709&permissions=8&integration_type=0&scope=bot+applications.commands',
   BOT_AVATAR_EMOJI: '<:2c5cdb61411e80788732456a0cd8212a:1527058448125267968>',
+  EMOJI: {
+    website: '<:website:1534672475101597746>',
+    refresh: '<:refresh:1534672355987689502>',
+    preview: '<:preview:1534672293823778948>',
+    moderation: '<:moderation:1534672255500681398>',
+    report: '<:report:1534672204489425027>',
+    statusOnline: '<:online:1535037884720218142>',
+    statusIdle: '<:idle:1535037900360523989>',
+    statusDnd: '<:dnd:1535037923181858816>',
+    statusStreaming: '<:streaming:1535037868307775648>',
+    statusOffline: '<:offline:1535037946669830154>',
+  },
   DEVELOPER_URL: 'https://discord.com/users/1026824982329839707',
   SUPPORT_SERVER_URL: 'https://discord.gg/zsNhVNAXkP',
   HONEYPOT_CHANNEL_NAME: 'dont-type-here',
