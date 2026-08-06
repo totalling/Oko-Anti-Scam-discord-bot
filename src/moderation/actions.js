@@ -3,14 +3,12 @@ const { MediaGalleryBuilder, MediaGalleryItemBuilder, PermissionFlagsBits } = re
 const constants = require('../constants');
 const blacklist = require('./blacklist');
 const guildSettings = require('./guildSettings');
+const historyStore = require('./historyStore');
 const reviewStore = require('./reviewStore');
 const style = require('./style');
 const { scamLogComponents, reviewLogComponents } = require('./views');
-const { getLogger } = require('../logger');
-const logger = getLogger('scam_bot.moderation');
 const TIMEOUT_DURATION_MS = 28 * 24 * 60 * 60 * 1000;
 const PUNISHMENT_VERBS = { ban: 'banned', kick: 'kicked', timeout: 'timed out' };
-const FORBIDDEN = 50013;
 const UNKNOWN_MESSAGE = 10008;
 async function _sendCompromisedDm(member, verb) {
   try {
@@ -27,7 +25,6 @@ async function _sendCompromisedDm(member, verb) {
     });
     await member.send(style.payload(container));
   } catch {
-    logger.debug(`Could not DM user ${member.id} about their compromised account`);
   }
 }
 async function applyPunishment(member, punishment, reason) {
@@ -42,12 +39,7 @@ async function applyPunishment(member, punishment, reason) {
       await member.ban({ reason, deleteMessageSeconds: 86400 });
     }
     return true;
-  } catch (err) {
-    if (err.code === FORBIDDEN) {
-      logger.warn(`Missing permission to ${punishment} user ${member.id}`);
-    } else {
-      logger.error(`Failed to ${punishment} user ${member.id}: ${err.message}`);
-    }
+  } catch {
     return false;
   }
 }
@@ -75,29 +67,22 @@ function _buildLogContainer(message, result, action, pendingReview) {
     `> **Author:** ${message.author} \`${message.author.id}\`\n` +
     `> **Action:** ${action}\n` +
     `> **Confidence:** ${result.confidence.toFixed(2)} · **Signals:** ${result.reasons.length}` +
-    (pendingReview ? '\n> ⏳ **Awaiting moderator review** — Punish or Release below' : '');
+    (pendingReview ? '\n> ⏳ **Awaiting moderator review**: Punish or Release below' : '');
   const container = style.build(description, { timestamp: true });
   container.addActionRowComponents(pendingReview ? reviewLogComponents() : scamLogComponents());
   return container;
 }
 async function takeAction(message, result, imageBytesList, cfg, client) {
-  const shouldPunish = result.confidence >= cfg.confidenceBanThreshold;
+  const guildThreshold = message.guild ? guildSettings.getThreshold(message.guild.id) : null;
+  const threshold = guildThreshold ?? cfg.confidenceBanThreshold;
+  const shouldPunish = result.confidence >= threshold;
   const reviewMode = message.guild ? guildSettings.getReviewMode(message.guild.id) : false;
   let deleted;
   try {
     await message.delete();
     deleted = true;
   } catch (err) {
-    if (err.code === UNKNOWN_MESSAGE) {
-      deleted = true;
-    } else {
-      deleted = false;
-      if (err.code === FORBIDDEN) {
-        logger.warn(`Missing permission to delete message ${message.id}`);
-      } else {
-        logger.error(`Failed to delete message ${message.id}: ${err.message}`);
-      }
-    }
+    deleted = err.code === UNKNOWN_MESSAGE;
   }
   let punished = false;
   let punishment = 'ban';
@@ -107,7 +92,7 @@ async function takeAction(message, result, imageBytesList, cfg, client) {
       message.member,
       punishment,
       reviewMode
-        ? `Scam detected — held for moderator review (confidence=${result.confidence.toFixed(2)})`
+        ? `Scam detected, held for moderator review (confidence=${result.confidence.toFixed(2)})`
         : `Automated scam-giveaway detection (confidence=${result.confidence.toFixed(2)})`
     );
   }
@@ -118,7 +103,13 @@ async function takeAction(message, result, imageBytesList, cfg, client) {
   else if (deleted) action = 'deleted message';
   else if (punished) action = `${verb} author`;
   else action = 'flagged only (missing permissions)';
-  if (pendingReview) action += ' — pending review';
+  if (pendingReview) action += ' (pending review)';
+  await historyStore.record(message.author.id, {
+    guildId: message.guild?.id,
+    type: 'detection',
+    detail: action,
+    confidence: result.confidence,
+  });
   await _logToModChannel(message, result, imageBytesList, action, pendingReview);
   if (punished && !reviewMode) {
     await _postPublicGate(message.author, result.reasons, client, verb);
@@ -136,6 +127,11 @@ async function takeAction(message, result, imageBytesList, cfg, client) {
 }
 async function logGlobalBlacklistAction(client, guild, member, punishment, punished, reason) {
   const verb = punished ? (PUNISHMENT_VERBS[punishment] ?? 'banned') : 'flagged (missing permissions)';
+  await historyStore.record(member.id, {
+    guildId: guild.id,
+    type: 'global_blacklist',
+    detail: `${verb}: ${reason}`,
+  });
   const description =
     `> 🌐 **Global blacklist hit** in **${guild.name}**\n` +
     `> **User:** ${member} \`${member.id}\`\n` +
@@ -162,12 +158,9 @@ async function _propagateGlobalBan(client, userId, sourceGuild, reason) {
     const punished = await applyPunishment(
       member,
       punishment,
-      `Global scam blacklist — ${fullReason}`.slice(0, 512)
+      `Global scam blacklist: ${fullReason}`.slice(0, 512)
     );
     await logGlobalBlacklistAction(client, guild, member, punishment, punished, fullReason);
-    logger.debug(
-      `Global blacklist propagation: user=${userId} guild=${guild.id} punishment=${punishment} success=${punished}`
-    );
   }
 }
 async function _postPublicGate(author, reasons, client, verb) {
@@ -187,12 +180,7 @@ async function _postPublicGate(author, reasons, client, verb) {
 async function _logToModChannel(message, result, imageBytesList, action, pendingReview = false) {
   if (!message.guild) return;
   const channelId = guildSettings.getLogChannelId(message.guild.id);
-  if (!channelId) {
-    logger.warn(
-      `No log channel set for guild ${message.guild.id} — run /scam setlogchannel to configure one`
-    );
-    return;
-  }
+  if (!channelId) return;
   const channel = message.guild.channels.cache.get(String(channelId));
   if (!channel) return;
   const container = _buildLogContainer(message, result, action, pendingReview);
@@ -265,9 +253,14 @@ async function handleReviewDecision(interaction, approve) {
     verdict = 'released';
   }
   await reviewStore.setResolved(interaction.message.id, verdict);
+  await historyStore.record(review.authorId, {
+    guildId: guild.id,
+    type: 'review',
+    detail: `${verdict} by ${interaction.user.tag}`,
+  });
   const emoji = approve ? '🔨' : '✅';
   const description =
-    `> 🚫 **Scam detected** — review complete\n` +
+    `> 🚫 **Scam detected**: review complete\n` +
     `> **Author:** <@${review.authorId}> \`${review.authorId}\`\n` +
     `> **Confidence:** ${review.confidence.toFixed(2)} · **Signals:** ${review.reasons.length}\n` +
     `> **Verdict:** ${emoji} **${verdict}** by ${interaction.user}`;

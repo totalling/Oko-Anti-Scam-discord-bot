@@ -1,9 +1,6 @@
 'use strict';
 const { spawn } = require('child_process');
-const { getLogger } = require('../logger');
-const logger = getLogger('scam_bot.ocr');
 const OCR_TIMEOUT_MS = 30000;
-let _warnedStartFailure = false;
 function extractText(imageBytes, cfg) {
   return new Promise((resolve) => {
     const cmd = cfg.tesseractCmd || 'tesseract';
@@ -33,13 +30,7 @@ function extractText(imageBytes, cfg) {
     proc.stdout.on('data', (chunk) => {
       out += chunk.toString('utf8');
     });
-    proc.on('error', (err) => {
-      if (!_warnedStartFailure) {
-        _warnedStartFailure = true;
-        logger.warn(`tesseract failed to start: ${err.message} (further OCR failures will be silent)`);
-      }
-      done('');
-    });
+    proc.on('error', () => done(''));
     proc.on('close', () => done(out));
     proc.stdin.on('error', () => done(''));
     proc.stdin.write(imageBytes);

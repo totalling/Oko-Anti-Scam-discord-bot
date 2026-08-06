@@ -3,8 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 const { DATA_DIR } = require('../constants');
-const { getLogger } = require('../logger');
-const logger = getLogger('scam_bot.phash');
 const HASH_STORE_PATH = path.join(DATA_DIR, 'scam_hashes.json');
 const HASH_SIZE = 8;
 const HIGHFREQ_FACTOR = 4;
@@ -98,8 +96,7 @@ async function computePhash(imageBytes) {
     const bits = new Array(HASH_SIZE * HASH_SIZE);
     for (let i = 0; i < lowfreq.length; i++) bits[i] = lowfreq[i] > med ? 1 : 0;
     return bitsToHex(bits);
-  } catch (err) {
-    logger.warn(`phash failed: ${err.message}`);
+  } catch {
     return null;
   }
 }

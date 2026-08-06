@@ -1,9 +1,9 @@
 'use strict';
-const { Client, GatewayIntentBits, Events, ActivityType } = require('discord.js');
+const { Client, GatewayIntentBits, Events, ActivityType, version: discordJsVersion } = require('discord.js');
 const { loadConfig } = require('./config');
 const { collectCommands } = require('./commands');
 const { syncCommands } = require('./deploy');
-const { getLogger } = require('./logger');
+const { getLogger, box } = require('./logger');
 const { onMessageCreate } = require('./events/messageCreate');
 const { onGuildMemberAdd } = require('./events/guildMemberAdd');
 const { onGuildCreate } = require('./events/guildCreate');
@@ -17,6 +17,8 @@ function main() {
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
       GatewayIntentBits.GuildMembers,
+      GatewayIntentBits.GuildPresences,
+      GatewayIntentBits.GuildVoiceStates,
     ],
   });
   const commandList = collectCommands();
@@ -29,14 +31,27 @@ function main() {
   const ctx = { client, cfg, commands, updatePresence };
   const guard = (scope) => (err) => logger.error(`Unhandled error in ${scope}:`, err);
   client.once(Events.ClientReady, async () => {
-    logger.info(`Logged in as ${client.user.tag} (id=${client.user.id})`);
+    const startedAt = Date.now();
     await updatePresence();
+    let commandStatus = 'up to date';
     try {
       const commandJson = commandList.map((c) => c.data.toJSON());
-      await syncCommands(cfg.discordToken, client.application.id, commandJson);
+      const changed = await syncCommands(cfg.discordToken, client.application.id, commandJson);
+      commandStatus = `${commandJson.length} ${changed ? 'registered' : 'up to date'}`;
     } catch (err) {
+      commandStatus = 'sync failed';
       logger.error('Failed to sync application commands:', err);
     }
+    const ping = client.ws.ping;
+    box(`${client.user.tag} is online`, [
+      ['User', `${client.user.tag} (${client.user.id})`],
+      ['Guilds', String(client.guilds.cache.size)],
+      ['Ping', ping >= 0 ? `${ping}ms` : 'measuring…'],
+      ['Commands', commandStatus],
+      ['Node', process.version],
+      ['discord.js', `v${discordJsVersion}`],
+      ['Ready in', `${Date.now() - startedAt}ms`],
+    ]);
   });
   client.on(Events.MessageCreate, (message) => onMessageCreate(message, ctx).catch(guard('messageCreate')));
   client.on(Events.GuildMemberAdd, (member) => onGuildMemberAdd(member, ctx).catch(guard('guildMemberAdd')));

@@ -4,8 +4,6 @@ const actions = require('../moderation/actions');
 const blacklist = require('../moderation/blacklist');
 const guildSettings = require('../moderation/guildSettings');
 const style = require('../moderation/style');
-const { getLogger } = require('../logger');
-const logger = getLogger('scam_bot.listener');
 async function onGuildMemberAdd(member, ctx) {
   if (guildSettings.getGlobalBlacklistEnabled(member.guild.id)) {
     const entry = blacklist.getEntry(member.id);
@@ -17,13 +15,9 @@ async function onGuildMemberAdd(member, ctx) {
       const punished = await actions.applyPunishment(
         member,
         punishment,
-        `Global scam blacklist — ${reason}`.slice(0, 512)
+        `Global scam blacklist: ${reason}`.slice(0, 512)
       );
       await actions.logGlobalBlacklistAction(ctx.client, member.guild, member, punishment, punished, reason);
-      logger.info(
-        `Global blacklist hit on join: user=${member.id} guild=${member.guild.id} ` +
-          `punishment=${punishment} success=${punished}`
-      );
     }
   }
   if (member.guild.id !== constants.OKO_GUILD_ID) return;
