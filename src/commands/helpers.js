@@ -17,7 +17,10 @@ function replyNoGuild(interaction) {
 function hasManageGuild(interaction) {
   return Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild));
 }
+function hasAdministrator(interaction) {
+  return Boolean(interaction.memberPermissions?.has(PermissionFlagsBits.Administrator));
+}
 function replyNoPermission(interaction) {
   return reply(interaction, "You don't have permission to use this command.", '🔒');
 }
-module.exports = { isBotOwner, reply, replyNoGuild, hasManageGuild, replyNoPermission };
+module.exports = { isBotOwner, reply, replyNoGuild, hasManageGuild, hasAdministrator, replyNoPermission };

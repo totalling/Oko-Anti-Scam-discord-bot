@@ -5,6 +5,8 @@ const heuristics = require('../detection/heuristics');
 const actions = require('../moderation/actions');
 const guildSettings = require('../moderation/guildSettings');
 const historyStore = require('../moderation/historyStore');
+const activityStore = require('../moderation/activityStore');
+const antiNuke = require('../moderation/antiNuke');
 const { fetchImageBytes } = require('../attachments');
 const INVITE_PATTERN = /(?:discord\.gg|discord(?:app)?\.com\/invite)\/[a-z0-9-]+/i;
 function _honeypotTrigger(message) {
@@ -36,6 +38,8 @@ async function _handleHoneypot(message) {
 }
 async function onMessageCreate(message, ctx) {
   if (message.author.bot || !message.guild) return;
+  activityStore.recordMessage(message.guild.id, message.author.id, message.channel.id);
+  await antiNuke.handleMessage(message, ctx.client);
   const honeypotChannelId = guildSettings.getHoneypotChannelId(message.guild.id);
   if (honeypotChannelId && message.channel.id === String(honeypotChannelId)) {
     await _handleHoneypot(message);

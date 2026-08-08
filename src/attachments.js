@@ -10,22 +10,21 @@ function _getClient() {
   );
   return _clientPromise;
 }
-async function fetchImageBytes(message) {
+async function fetchUrlBytes(url) {
   const client = await _getClient();
+  try {
+    const res = await client.fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return Buffer.from(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+async function fetchImageBytes(message) {
   const images = [...message.attachments.values()].filter((a) =>
     (a.contentType || '').startsWith('image/')
   );
-  const results = await Promise.all(
-    images.map(async (attachment) => {
-      try {
-        const res = await client.fetch(attachment.url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return Buffer.from(await res.arrayBuffer());
-      } catch {
-        return null;
-      }
-    })
-  );
+  const results = await Promise.all(images.map((attachment) => fetchUrlBytes(attachment.url)));
   return results.filter(Boolean);
 }
-module.exports = { fetchImageBytes };
+module.exports = { fetchImageBytes, fetchUrlBytes };

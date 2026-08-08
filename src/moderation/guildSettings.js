@@ -173,6 +173,97 @@ function removeIgnoredChannelId(guildId, channelId) {
     return true;
   });
 }
+function getAntiNukeEnabled(guildId) {
+  return _entry(store.read(), guildId).antinuke_enabled ?? false;
+}
+function setAntiNukeEnabled(guildId, enabled) {
+  return _set(guildId, 'antinuke_enabled', enabled);
+}
+function getAntiNukeThreshold(guildId) {
+  return _entry(store.read(), guildId).antinuke_threshold ?? 5;
+}
+function setAntiNukeThreshold(guildId, threshold) {
+  if (!Number.isInteger(threshold) || threshold < 2 || threshold > 20) {
+    throw new Error(`Invalid anti-nuke threshold: ${threshold}`);
+  }
+  return _set(guildId, 'antinuke_threshold', threshold);
+}
+function getAntiNukeWindowSeconds(guildId) {
+  return _entry(store.read(), guildId).antinuke_window_seconds ?? 10;
+}
+function setAntiNukeWindowSeconds(guildId, seconds) {
+  if (!Number.isInteger(seconds) || seconds < 3 || seconds > 300) {
+    throw new Error(`Invalid anti-nuke window: ${seconds}`);
+  }
+  return _set(guildId, 'antinuke_window_seconds', seconds);
+}
+function getAntiNukePunishment(guildId) {
+  return _entry(store.read(), guildId).antinuke_punishment ?? 'kick';
+}
+function setAntiNukePunishment(guildId, punishment) {
+  if (!VALID_PUNISHMENTS.includes(punishment)) {
+    throw new Error(`Invalid punishment: ${punishment}`);
+  }
+  return _set(guildId, 'antinuke_punishment', punishment);
+}
+function getAntiNukeExemptUserIds(guildId) {
+  return _entry(store.read(), guildId).antinuke_exempt_user_ids ?? [];
+}
+function addAntiNukeExemptUserId(guildId, userId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const entry = (data[String(guildId)] ??= {});
+    const list = (entry.antinuke_exempt_user_ids ??= []);
+    userId = String(userId);
+    if (list.includes(userId)) return false;
+    list.push(userId);
+    entry.updated_at = new Date().toISOString();
+    write(data);
+    return true;
+  });
+}
+function removeAntiNukeExemptUserId(guildId, userId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const entry = data[String(guildId)];
+    const list = entry?.antinuke_exempt_user_ids ?? [];
+    userId = String(userId);
+    if (!list.includes(userId)) return false;
+    entry.antinuke_exempt_user_ids = list.filter((id) => id !== userId);
+    entry.updated_at = new Date().toISOString();
+    write(data);
+    return true;
+  });
+}
+function getAntiNukeExemptRoleIds(guildId) {
+  return _entry(store.read(), guildId).antinuke_exempt_role_ids ?? [];
+}
+function addAntiNukeExemptRoleId(guildId, roleId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const entry = (data[String(guildId)] ??= {});
+    const list = (entry.antinuke_exempt_role_ids ??= []);
+    roleId = String(roleId);
+    if (list.includes(roleId)) return false;
+    list.push(roleId);
+    entry.updated_at = new Date().toISOString();
+    write(data);
+    return true;
+  });
+}
+function removeAntiNukeExemptRoleId(guildId, roleId) {
+  return store.withLock((read, write) => {
+    const data = read();
+    const entry = data[String(guildId)];
+    const list = entry?.antinuke_exempt_role_ids ?? [];
+    roleId = String(roleId);
+    if (!list.includes(roleId)) return false;
+    entry.antinuke_exempt_role_ids = list.filter((id) => id !== roleId);
+    entry.updated_at = new Date().toISOString();
+    write(data);
+    return true;
+  });
+}
 module.exports = {
   VALID_PUNISHMENTS,
   isEnabled,
@@ -202,4 +293,18 @@ module.exports = {
   getIgnoredChannelIds,
   addIgnoredChannelId,
   removeIgnoredChannelId,
+  getAntiNukeEnabled,
+  setAntiNukeEnabled,
+  getAntiNukeThreshold,
+  setAntiNukeThreshold,
+  getAntiNukeWindowSeconds,
+  setAntiNukeWindowSeconds,
+  getAntiNukePunishment,
+  setAntiNukePunishment,
+  getAntiNukeExemptUserIds,
+  addAntiNukeExemptUserId,
+  removeAntiNukeExemptUserId,
+  getAntiNukeExemptRoleIds,
+  addAntiNukeExemptRoleId,
+  removeAntiNukeExemptRoleId,
 };

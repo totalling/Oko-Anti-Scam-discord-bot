@@ -26,6 +26,7 @@ Scammers post the same handful of tricks over and over: a compromised or fake "v
 - **Global blacklist**: opt-in, cross-server. When Oko bans someone in one server, every other server that's enabled it punishes that same user too, immediately if they're already a member, or the moment they join
 - **Review mode**: optionally hold offenders in a timeout while moderators approve the punishment or release them, right from the log channel
 - **Compromised-account alerts**: banned/kicked users get a DM explaining their account was likely hacked and how to secure it
+- **Anti-nuke**: opt-in protection against a compromised or malicious admin/mod account. If one account performs several destructive actions (channel/role deletes, mass bans/kicks, webhook creates, bot adds) in a short window, Oko strips its roles and bans/kicks/times it out, no scam detection needed for this one
 
 ## In action
 
@@ -65,6 +66,18 @@ Every detection is logged to your mod channel with the offending message's evide
 | `/scamlists ignorechannel add` / `remove` | Stop (or resume) scanning messages in a channel |
 | `/scamlists list domains` / `names` | Browse the global blocklists, paginated with Prev/Next buttons |
 
+### Anti-nuke (`Administrator` required)
+
+| Command | Description |
+|---|---|
+| `/antinuke toggle` | Enable or disable anti-nuke protection for this server |
+| `/antinuke threshold` | How many destructive actions in the time window trigger a response (default 5) |
+| `/antinuke window` | The time window, in seconds, actions are counted within (default 10) |
+| `/antinuke setpunishment` | What happens to the offending account once triggered: **ban**, **kick**, or **timeout** (roles are always stripped first) |
+| `/antinuke status` | Show current anti-nuke settings and exemptions |
+| `/antinuke exempt adduser` / `removeuser` | Trust a specific user; their actions never trigger anti-nuke |
+| `/antinuke exempt addrole` / `removerole` | Trust everyone with a role; their actions never trigger anti-nuke |
+
 ### Honeypot (`Manage Server` required)
 
 | Command | Description |
@@ -81,6 +94,9 @@ Every detection is logged to your mod channel with the offending message's evide
 | `/support` | Get an invite to the support server |
 | `/botinfo` | Bot stats: servers, members protected, scammers caught |
 | `/whois` | Look up a member: live status/activity, join date & position, roles, and key permissions |
+| `/serverpulse` | Live-rendered dashboard image: member/online counts, a 24h message-volume bar chart, and the most active members |
+| `/voicepulse` | Live-rendered snapshot image of who's in which voice channel right now |
+| `/scammap` | This server's scam-catch history as a GitHub-contribution-style calendar, with busiest day and current streak |
 | `/scam globalstats` | Public stats: total scammers caught bot-wide and recent global-blacklist activity |
 | `/scam appeal` | Appeal your own global blacklist ban directly to the bot owner, who gets Approve/Deny buttons |
 | **Mark as Known Scam** *(message context menu)* | Manually blacklist a message's author and learn its image hash |
@@ -151,3 +167,4 @@ deploy/             systemd unit for running the bot as a service
 - **Rate-limit safe restarts**: command definitions are SHA-256 hashed; on boot, registration is skipped entirely (zero API calls) unless commands actually changed, so frequent restarts never trip Discord's application-command rate limits
 - **Fast scanning path**: blocklists and settings are memory-cached (no per-message disk reads), hash-matched images skip OCR entirely, and image downloads run concurrently
 - **imagehash-compatible pHash**: perceptual hashes are computed with the same DCT algorithm as Python's `imagehash`, so hash databases stay interchangeable
+- **Rendered dashboard images**: `/serverpulse` and `/voicepulse` are drawn on the fly as SVG and rasterized with `sharp`, no canvas dependency or external image service. Per-guild message counts are batched in memory and flushed to disk every 15s to keep tracking cheap at high message volume

@@ -8,7 +8,26 @@ const { onMessageCreate } = require('./events/messageCreate');
 const { onGuildMemberAdd } = require('./events/guildMemberAdd');
 const { onGuildCreate } = require('./events/guildCreate');
 const { onInteractionCreate } = require('./events/interactionCreate');
+const { onGuildAuditLogEntryCreate } = require('./events/guildAuditLogEntryCreate');
+const guildSettings = require('./moderation/guildSettings');
 const logger = getLogger('scam_bot');
+const STATUS_INTERVAL_MS = 30000;
+const STATUS_BUILDERS = [
+  (client) => {
+    const count = client.guilds.cache.size;
+    return `${count} server${count !== 1 ? 's' : ''} for scams`;
+  },
+  (client) => {
+    const count = client.guilds.cache.reduce((sum, g) => sum + (g.memberCount || 0), 0);
+    return `${count.toLocaleString('en-US')} members protected`;
+  },
+  () => {
+    const count = guildSettings.getGlobalBanCount();
+    return `${count.toLocaleString('en-US')} scammer${count !== 1 ? 's' : ''} caught`;
+  },
+  () => '/botinfo for stats',
+  () => '/support for help',
+];
 function main() {
   const cfg = loadConfig();
   const client = new Client({
@@ -19,14 +38,19 @@ function main() {
       GatewayIntentBits.GuildMembers,
       GatewayIntentBits.GuildPresences,
       GatewayIntentBits.GuildVoiceStates,
+      GatewayIntentBits.GuildModeration,
     ],
   });
   const commandList = collectCommands();
   const commands = new Map(commandList.map((c) => [c.data.name, c]));
+  let statusIndex = 0;
   async function updatePresence() {
-    const count = client.guilds.cache.size;
-    const label = `${count} server${count !== 1 ? 's' : ''} for scams`;
+    const label = STATUS_BUILDERS[statusIndex % STATUS_BUILDERS.length](client);
     client.user.setActivity({ name: label, type: ActivityType.Watching });
+  }
+  function cyclePresence() {
+    statusIndex += 1;
+    return updatePresence();
   }
   const ctx = { client, cfg, commands, updatePresence };
   const guard = (scope) => (err) => logger.error(`Unhandled error in ${scope}:`, err);
@@ -52,12 +76,16 @@ function main() {
       ['discord.js', `v${discordJsVersion}`],
       ['Ready in', `${Date.now() - startedAt}ms`],
     ]);
+    setInterval(() => cyclePresence().catch(guard('presence cycle')), STATUS_INTERVAL_MS);
   });
   client.on(Events.MessageCreate, (message) => onMessageCreate(message, ctx).catch(guard('messageCreate')));
   client.on(Events.GuildMemberAdd, (member) => onGuildMemberAdd(member, ctx).catch(guard('guildMemberAdd')));
   client.on(Events.GuildCreate, (guild) => onGuildCreate(guild, ctx).catch(guard('guildCreate')));
   client.on(Events.GuildDelete, () => updatePresence().catch(guard('guildDelete')));
   client.on(Events.InteractionCreate, (interaction) => onInteractionCreate(interaction, ctx));
+  client.on(Events.GuildAuditLogEntryCreate, (entry, guild) =>
+    onGuildAuditLogEntryCreate(entry, guild, ctx).catch(guard('guildAuditLogEntryCreate'))
+  );
   process.on('unhandledRejection', (err) => logger.error('unhandledRejection:', err));
   client.login(cfg.discordToken);
 }

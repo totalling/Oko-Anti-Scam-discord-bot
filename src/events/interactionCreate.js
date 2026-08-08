@@ -20,6 +20,9 @@ const {
   handleAppealButton,
   handleListPageButton,
 } = require('../moderation/panels');
+const serverpulse = require('../commands/serverpulse');
+const voicepulse = require('../commands/voicepulse');
+const scammap = require('../commands/scammap');
 async function onInteractionCreate(interaction, ctx) {
   try {
     if (interaction.isChatInputCommand() || interaction.isMessageContextMenuCommand()) {
@@ -37,6 +40,9 @@ async function onInteractionCreate(interaction, ctx) {
       else if (id.startsWith(APPEAL_APPROVE_PREFIX)) await handleAppealButton(interaction, true);
       else if (id.startsWith(APPEAL_DENY_PREFIX)) await handleAppealButton(interaction, false);
       else if (id.startsWith(LIST_PAGE_PREFIX)) await handleListPageButton(interaction);
+      else if (id === serverpulse.REFRESH_ID) await serverpulse.handleRefreshButton(interaction);
+      else if (id === voicepulse.REFRESH_ID) await voicepulse.handleRefreshButton(interaction);
+      else if (id === scammap.REFRESH_ID) await scammap.handleRefreshButton(interaction);
     }
   } catch {
     const container = style.commandReply(interaction, 'Something went wrong running that command.', '❌');

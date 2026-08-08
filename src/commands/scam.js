@@ -322,6 +322,7 @@ async function execute(interaction, ctx) {
         honeypot: '🪤 Honeypot',
         global_blacklist: `${EMOJI.website} Global blacklist`,
         review: `${EMOJI.moderation} Review`,
+        antinuke: '🛡️ Anti-nuke',
       };
       const lines = entries.map((e) => {
         const when = `<t:${Math.floor(new Date(e.at).getTime() / 1000)}:d>`;
@@ -424,6 +425,7 @@ async function execute(interaction, ctx) {
         honeypot: '🪤 Honeypot',
         global_blacklist: `${EMOJI.website} Global blacklist`,
         review: `${EMOJI.moderation} Review`,
+        antinuke: '🛡️ Anti-nuke',
       };
       const lines = entries.map((e) => {
         const when = `<t:${Math.floor(new Date(e.at).getTime() / 1000)}:R>`;

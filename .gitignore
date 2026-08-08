@@ -6,4 +6,6 @@ data/guild_settings.json
 data/pending_reviews.json
 data/scam_hashes.json
 data/global_blacklist.json
+data/activity.json
+data/scam_map.json
 data/.command-hash
