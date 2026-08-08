@@ -8,6 +8,8 @@ const historyStore = require('../moderation/historyStore');
 const activityStore = require('../moderation/activityStore');
 const antiNuke = require('../moderation/antiNuke');
 const { fetchImageBytes } = require('../attachments');
+const { getLogger } = require('../logger');
+const logger = getLogger('message_create');
 const INVITE_PATTERN = /(?:discord\.gg|discord(?:app)?\.com\/invite)\/[a-z0-9-]+/i;
 function _honeypotTrigger(message) {
   if (INVITE_PATTERN.test(message.content)) return 'posted a Discord invite link';
@@ -38,8 +40,16 @@ async function _handleHoneypot(message) {
 }
 async function onMessageCreate(message, ctx) {
   if (message.author.bot || !message.guild) return;
-  activityStore.recordMessage(message.guild.id, message.author.id, message.channel.id);
-  await antiNuke.handleMessage(message, ctx.client);
+  try {
+    activityStore.recordMessage(message.guild.id, message.author.id, message.channel.id);
+  } catch (err) {
+    logger.error('activityStore.recordMessage failed (non-fatal):', err);
+  }
+  try {
+    await antiNuke.handleMessage(message, ctx.client);
+  } catch (err) {
+    logger.error('antiNuke.handleMessage failed (non-fatal):', err);
+  }
   const honeypotChannelId = guildSettings.getHoneypotChannelId(message.guild.id);
   if (honeypotChannelId && message.channel.id === String(honeypotChannelId)) {
     await _handleHoneypot(message);
